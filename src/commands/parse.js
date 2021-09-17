@@ -3,7 +3,8 @@ import utils from '../bin/util'
 import mapi from '../bin/mapi'
 import fs from 'fs'
 import path from 'path'
-import bunyan from 'bunyan'
+import d from 'debug'
+const debug = d('node-tnef')
 
 export const command = 'parse [directory] [file]'
 
@@ -25,8 +26,6 @@ export const builder = {
         demandOption: false
     }
 }
-
-const log = bunyan.createLogger({ name: 'node-tnef' })
 
 // standard TNEF signature
 const tnefSignature = 0x223e9f78
@@ -73,13 +72,13 @@ export function handler(argv) {
     const opts = parseOptions(argv)
 
     if (opts && opts.directory) {
-        log.info('Begin iterating through the directory:' + opts.directory)
+        debug('Begin iterating through the directory:' + opts.directory)
         ProcessDirectory(opts.directory)
     } else if (opts && opts.file) {
-        log.info('Begin parsing the file:' + opts.file)
+        debug('Begin parsing the file:' + opts.file)
         ProcessFile(opts.file)
     } else {
-        log.warn('No arguments specified!')
+        debug('WARN - No arguments specified!')
     }
 }
 
@@ -100,22 +99,22 @@ export function handler(argv) {
 // method that can be used within another Node module to parse a single
 // TNEF file given the file path and a callback
 export function parse(filePath, callback) {
-    log.info('ATTEMPTING TO PARSE ' + filePath);
+    debug('ATTEMPTING TO PARSE ' + filePath);
 
     DecodeFile(filePath).then((result) => {
         // if there is an attachment, extract it and save to file
         if (result && result.Attachments && result.Attachments.length > 0) {
-            log.info('Done decoding ' + filePath + ' and found attachments!!')
+            debug('Done decoding ' + filePath + ' and found attachments!!')
             callback(false, result)
         } else if (result && (result.BodyHTML || result.Body)) {
-            log.info('Done decoding ' + filePath + ' and found email body!!')
+            debug('Done decoding ' + filePath + ' and found email body!!')
             callback(false, result)
         } else {
-            log.warn('Something went wrong with parsing ' + filePath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
+            debug('WARN - Something went wrong with parsing ' + filePath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
             callback(true, null)
         }
     }).catch((err) => {
-        log.error('Something went wrong parsing ' + filePath, err)
+        debug('ERROR - Something went wrong parsing ' + filePath, err)
         callback(true, err)
     })
 }
@@ -156,14 +155,14 @@ var addAttr = ((obj, attachment) => {
 // before calling the normal Decode function on the data.
 var DecodeFile = ((path) => {
     return new Promise((resolve, reject) => {
-        log.info('Read the supposed TNEF file: ' + path)
+        debug('Read the supposed TNEF file: ' + path)
 
         fs.readFile(path, (err, data) => {
             if (!err) {
                 var arr = [...data]
                 resolve(Decode(arr, path))
             } else {
-                log.error(err);
+                debug('ERROR' + err.message)
                 reject(err)
             }
         })
@@ -179,11 +178,11 @@ var Decode = ((data) => {
 
     // if the signature we get doesn't match the TNEF signature, exit
     if (signature !== tnefSignature) {
-        log.warn('Value of ' + signature + ' did not equal the expected value of ' + tnefSignature)
+        debug('WARN - Value of ' + signature + ' did not equal the expected value of ' + tnefSignature)
         return null
     }
 
-    log.info('Found a valid TNEF signature')
+    debug('Found a valid TNEF signature')
 
     // set the starting offset past the signature
     var offset = 6
@@ -199,7 +198,7 @@ var Decode = ((data) => {
         var obj = decodeTNEFObject(tempData)
 
         if (!obj) {
-            log.error('Did not get a TNEF object back, exit')
+            debug('ERROR - Did not get a TNEF object back, exit')
             break;
         }
 
@@ -271,7 +270,7 @@ var ProcessDirectory = ((directory) => {
     // iterate through each file, and run DecodeFile
     fs.readdir(directory, (err, files) => {
         if (err) {
-            log.error('Could not list the directory: ', err)
+            debug('ERROR - Could not list the directory: ', err)
             process.exit(1)
         }
 
@@ -296,7 +295,7 @@ var ProcessFile = ((file, directory) => {
             fs.mkdirSync(processedPath)
         }
 
-        log.info('ATTEMPTING TO PARSE ' + fullPath);
+        debug('ATTEMPTING TO PARSE ' + fullPath);
 
         DecodeFile(fullPath).then((result) => {
             // if there is an attachment, extract it and save to file
@@ -305,31 +304,31 @@ var ProcessFile = ((file, directory) => {
                     var attachment = result.Attachments[a]
 
                     fs.writeFile(path.join(processedPath, attachment.Title), new Buffer(attachment.Data), (err) => {
-                        log.error(err)
+                        debug('ERROR' + err.message)
                         reject(err)
                     })
                 }
 
                 if (result.Body || result.BodyHTML) {
                     fs.writeFile(path.join(processedPath, 'htmlbody.html'), new Buffer(result.Body || result.BodyHTML), (err) => {
-                        log.error(err)
+                        debug('ERROR' + err.message)
                         reject(err)
                     })
                 }
 
-                log.info('Done decoding ' + fullPath + '!!')
+                debug('Done decoding ' + fullPath + '!!')
                 resolve(null)
             } else if (result && (result.Body || result.BodyHTML)) {
                 fs.writeFile(path.join(processedPath, 'htmlbody.html'), new Buffer(result.Body || result.BodyHTML), (err) => {
-                    log.error(err)
+                    debug('ERROR' + err.message)
                     reject(err)
                 })
             } else {
-                log.warn('Something went wrong with parsing ' + fullPath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
+                debug('WARN - Something went wrong with parsing ' + fullPath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
                 resolve(null)
             }
         }).catch((err) => {
-            log.error('Something went wrong parsing ' + fullPath, err)
+            debug('ERROR - Something went wrong parsing ' + fullPath, err)
             reject(err)
         })
     })

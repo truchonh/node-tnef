@@ -1,6 +1,6 @@
 {
   "name": "node-tnef",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "TNEF Parser using NodeJS",
   "babel": {
     "presets": [
@@ -56,8 +56,8 @@
     "rimraf": "^3.0.2"
   },
   "dependencies": {
-    "bunyan": "^1.8.12",
     "convert-string": "^0.1.0",
+    "debug": "^4.3.2",
     "yargs": "^15.3.1"
   }
 }

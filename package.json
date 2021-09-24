@@ -1,6 +1,6 @@
 {
   "name": "node-tnef",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "TNEF Parser using NodeJS",
   "babel": {
     "presets": [
@@ -19,10 +19,10 @@
     "node-tnef": "dist/bin/node-tnef.js"
   },
   "scripts": {
-    "prebuild": "npm run clean",
-    "build": "babel src --out-dir dist",
-    "clean": "rimraf dist",
-    "prepublish": "npm run build",
+    "prebuild": "# npm run clean",
+    "build": "# babel src --out-dir dist",
+    "clean": "# rimraf dist",
+    "prepublish": "# npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -18,13 +18,6 @@
   "bin": {
     "node-tnef": "dist/bin/node-tnef.js"
   },
-  "scripts": {
-    "prebuild": "npm run clean",
-    "build": "babel src --out-dir dist",
-    "clean": "rimraf dist",
-    "prepublish": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gatewayapps/node-tnef.git"
